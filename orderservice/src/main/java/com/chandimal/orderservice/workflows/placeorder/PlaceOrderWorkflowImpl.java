@@ -42,15 +42,19 @@ public class PlaceOrderWorkflowImpl implements PlaceOrderWorkflow{
 
   @Override
   public String placeOrder(String customerId) {
-    Saga.Options sagaOptions = new Saga.Options.Builder().setParallelCompensation(false).build();
+    Saga.Options sagaOptions = new Saga.Options.Builder().setParallelCompensation(true).build();
     Saga saga = new Saga(sagaOptions);
     try {
+      //Sleeping for 5 seconds
+      //Don't Use Thread.sleep Here
+      Workflow.sleep(5000);
+
       if(placeOrderActivities.isValidUser(customerId)){
         if (accountServiceActivities.isBalanceSufficient(customerId)) {
-          // Making a Transaction
-          accountServiceActivities.makeTransaction(customerId);
           //Adding compensation
           saga.addCompensation(accountServiceActivities::revertTransaction,customerId);
+          // Making a Transaction
+          accountServiceActivities.makeTransaction(customerId);
           return deliveryServiceActivities.deliverOrder(customerId);
         }else {
           return "ERROR_OCCURED";
